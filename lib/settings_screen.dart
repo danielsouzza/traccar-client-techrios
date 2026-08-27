@@ -9,6 +9,7 @@ import 'package:traccar_client/qr_code_screen.dart';
 import 'geolocation_service.dart';
 import 'l10n/app_localizations.dart';
 import 'preferences.dart';
+import 'status_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -175,8 +176,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         children: [
-          _buildListTile(AppLocalizations.of(context)!.idLabel, Preferences.id, false),
-          _buildListTile(AppLocalizations.of(context)!.urlLabel, Preferences.url, false),
+          // Vieram do painel principal, onde disputavam atenção com o botão
+          // de rastreamento — que é a ação central da tela.
+          ListTile(
+            leading: const Icon(Icons.my_location),
+            title: Text(AppLocalizations.of(context)!.locationButton),
+            onTap: () async {
+              try {
+                await GeolocationService.tracker.requestPosition();
+              } on PlatformException {
+                // permission denied or location error
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.receipt_long_outlined),
+            title: Text(AppLocalizations.of(context)!.statusButton),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StatusScreen()),
+            ),
+          ),
+          const Divider(height: 1),
+          // O identificador vem da embarcacao selecionada e a URL do servidor
+          // e fixa no app, entao nenhum dos dois e editavel aqui.
+          ListTile(
+            enabled: false,
+            title: Text(AppLocalizations.of(context)!.idLabel),
+            subtitle: Text(Preferences.instance.getString(Preferences.id) ?? ''),
+          ),
           _buildAccuracyListTile(),
           _buildListTile(AppLocalizations.of(context)!.distanceLabel, Preferences.distance, true),
           if (isHighestAccuracy || Platform.isAndroid && distance == 0)
