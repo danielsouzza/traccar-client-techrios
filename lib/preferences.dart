@@ -22,6 +22,17 @@ class Preferences {
   static const String preferPlatformProviders = 'prefer_platform_providers';
   static const String password = 'password';
 
+  // Seleção vinda da API de rastreio da TechRios.
+  static const String empresaId = 'empresa_id';
+  static const String empresaNome = 'empresa_nome';
+  static const String embarcacaoId = 'embarcacao_id';
+  static const String embarcacaoNome = 'embarcacao_nome';
+  static const String usuarioNome = 'usuario_nome';
+  static const String ambiente = 'ambiente';
+
+  /// Servidor Traccar da W3 Companhia. O usuário não configura mais a URL.
+  static const String defaultServerUrl = 'https://traccar.w3companhia.com/';
+
   static Future<void> init() async {
     _initFuture ??= _createInstance();
     await _initFuture;
@@ -35,6 +46,7 @@ class Preferences {
       cacheOptions: SharedPreferencesWithCacheOptions(
         allowList: {
           id, url, accuracy, distance, interval, angle, heartbeat, buffer, wakelock, stopDetection, preferPlatformProviders, password,
+          empresaId, empresaNome, embarcacaoId, embarcacaoNome, usuarioNome, ambiente,
         },
       ),
     );
@@ -45,9 +57,13 @@ class Preferences {
         }
       }
     }
+    // Instalações antigas ficaram com o servidor de demonstração do upstream.
+    if (instance.getString(url) == 'http://demo.traccar.org:5055') {
+      await instance.setString(url, defaultServerUrl);
+    }
     if (instance.getString(id) == null) {
       await instance.setString(id, (Random().nextInt(90000000) + 10000000).toString());
-      await instance.setString(url, 'http://demo.traccar.org:5055');
+      await instance.setString(url, defaultServerUrl);
       await instance.setString(accuracy, 'medium');
       await instance.setInt(interval, 300);
       await instance.setInt(distance, 75);

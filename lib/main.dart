@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart';
@@ -10,13 +10,18 @@ import 'package:rate_my_app/rate_my_app.dart';
 import 'package:traccar_client/password_service.dart';
 import 'package:traccar_client/push_service.dart';
 import 'package:traccar_client/quick_actions.dart';
+import 'package:traccar_client/login_screen.dart';
+import 'package:traccar_client/session_service.dart';
 
+import 'api/api_config.dart';
+import 'app_info.dart';
 import 'configuration_service.dart';
 import 'geolocation_service.dart';
 import 'l10n/app_localizations.dart';
 import 'main_screen.dart';
 import 'managed_config_service.dart';
 import 'preferences.dart';
+import 'theme.dart';
 
 final messengerKey = GlobalKey<ScaffoldMessengerState>();
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -25,16 +30,24 @@ final mainScreenKey = GlobalKey<MainScreenState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  FlutterError.onError = (details) {
+    // Em debug o handler padrão também roda: sem isso um erro de layout vai
+    // apenas para o Crashlytics e a tela quebra sem nada no console.
+    if (kDebugMode) FlutterError.presentError(details);
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+  };
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
   await Preferences.init();
+  ApiConfig.load();
   await GeolocationService.tracker.init(Preferences.buildConfig());
   await PasswordService.migrate();
   await PushService.init();
   await ManagedConfigService.init();
+  await SessionService.init();
+  await AppInfo.init();
   runApp(const MainApp());
 }
 
@@ -110,24 +123,32 @@ class _MainAppState extends State<MainApp> {
       navigatorKey: navigatorKey,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          brightness: Brightness.light,
-        ),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          brightness: Brightness.dark,
-        ),
-      ),
-      home: Stack(
-        children: [
-          const QuickActionsInitializer(),
-          MainScreen(key: mainScreenKey),
-        ],
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      home: const AuthGate(),
+    );
+  }
+}
+
+/// Mostra o login enquanto não há sessão e o app depois que há.
+/// Reage ao [SessionService.signedIn], então login e logout trocam a tela
+/// sem que nenhuma tela precise navegar manualmente.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: SessionService.signedIn,
+      builder: (context, signedIn, _) {
+        if (!signedIn) return const LoginScreen();
+        return Stack(
+          children: [
+            const QuickActionsInitializer(),
+            MainScreen(key: mainScreenKey),
+          ],
+        );
+      },
     );
   }
 }
