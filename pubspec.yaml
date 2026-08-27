@@ -1,7 +1,7 @@
 name: traccar_client
 description: "Traccar Client"
 publish_to: 'none'
-version: 10.0.12+154
+version: 1.0.1+2
 
 environment:
   sdk: ^3.7.2
@@ -27,6 +27,7 @@ dependencies:
   app_settings: ^8.0.3
   share_plus: ^13.3.0
   managed_configurations: ^1.2.0
+  package_info_plus: ^10.2.1
 
 dev_dependencies:
   flutter_test:
@@ -37,3 +38,15 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/icon/logo.png
+    - assets/brand/techrios.png
+    - assets/brand/techrios-white.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#005ABA"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  remove_alpha_ios: true
