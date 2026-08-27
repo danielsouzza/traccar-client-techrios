@@ -1,0 +1,104 @@
+name: Android Release
+
+# Toda atualização na main gera um APK assinado e publica uma Release.
+#
+# Nada de configuração vive no repositório: URLs vêm de Variables e chaves de
+# Secrets. O .env local serve apenas para builds na máquina do desenvolvedor.
+#
+# A tag NÃO começa com "v" de propósito: o release.yml herdado do upstream
+# dispara em "v*" e falharia por falta dos segredos de iOS e Play Store.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente que o APK vai usar
+        type: choice
+        options: [developer, producao]
+        default: developer
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      # push na main sempre usa developer; a escolha só existe no disparo manual
+      AMBIENTE: ${{ inputs.ambiente || 'developer' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Remonta a keystore a partir dos secrets, no caminho que o
+      # build.gradle.kts espera: <workspace>/../environment/
+      - name: Preparar assinatura
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        run: |
+          mkdir -p "$RUNNER_WORKSPACE/environment"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_WORKSPACE/environment/android.keystore"
+          cat > "$RUNNER_WORKSPACE/environment/key.properties" <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=../../../environment/android.keystore
+          EOF
+
+      # O versionCode precisa crescer a cada release, senão o Android recusa a
+      # atualização. run_number é monotônico, então serve como build number.
+      - name: Resolver versão
+        id: versao
+        run: |
+          NAME=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "tag=release-$NAME-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "arquivo=rota-rios-$NAME-${{ github.run_number }}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Build do APK
+        env:
+          BASE_URL_DEV: ${{ vars.RASTREIO_BASE_URL_DEV }}
+          BASE_URL_PROD: ${{ vars.RASTREIO_BASE_URL_PROD }}
+          HOST_HEADER_DEV: ${{ vars.RASTREIO_HOST_HEADER_DEV }}
+          HOST_HEADER_PROD: ${{ vars.RASTREIO_HOST_HEADER_PROD }}
+          API_KEY_DEV: ${{ secrets.RASTREIO_API_KEY_DEV }}
+          API_KEY_PROD: ${{ secrets.RASTREIO_API_KEY_PROD }}
+        run: |
+          flutter pub get
+          flutter build apk --release \
+            --build-name="${{ steps.versao.outputs.name }}" \
+            --build-number="${{ github.run_number }}" \
+            --dart-define=RASTREIO_ENV="$AMBIENTE" \
+            --dart-define=RASTREIO_BASE_URL_DEV="$BASE_URL_DEV" \
+            --dart-define=RASTREIO_HOST_HEADER_DEV="$HOST_HEADER_DEV" \
+            --dart-define=RASTREIO_API_KEY_DEV="$API_KEY_DEV" \
+            --dart-define=RASTREIO_BASE_URL_PROD="$BASE_URL_PROD" \
+            --dart-define=RASTREIO_HOST_HEADER_PROD="$HOST_HEADER_PROD" \
+            --dart-define=RASTREIO_API_KEY_PROD="$API_KEY_PROD"
+          mv build/app/outputs/flutter-apk/app-release.apk "${{ steps.versao.outputs.arquivo }}"
+
+      - name: Publicar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versao.outputs.tag }}
+          name: ROTA RIOS ${{ steps.versao.outputs.name }} (${{ env.AMBIENTE }})
+          body: |
+            Ambiente: **${{ env.AMBIENTE }}**
+            Build: ${{ github.run_number }}
+            Commit: ${{ github.sha }}
+          files: ${{ steps.versao.outputs.arquivo }}
+          fail_on_unmatched_files: true
