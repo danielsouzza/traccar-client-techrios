@@ -61,13 +61,17 @@ jobs:
 
       # O versionCode precisa crescer a cada release, senão o Android recusa a
       # atualização. run_number é monotônico, então serve como build number.
+      # O deslocamento evita colidir com os versionCode dos APKs gerados
+      # manualmente antes do CI existir, que chegaram a 2.
       - name: Resolver versão
         id: versao
         run: |
           NAME=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+          BUILD=$(( ${{ github.run_number }} + 10 ))
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
-          echo "tag=release-$NAME-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
-          echo "arquivo=rota-rios-$NAME-${{ github.run_number }}.apk" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "tag=release-$NAME-$BUILD" >> "$GITHUB_OUTPUT"
+          echo "arquivo=rota-rios-$NAME-$BUILD.apk" >> "$GITHUB_OUTPUT"
 
       - name: Build do APK
         env:
@@ -81,7 +85,7 @@ jobs:
           flutter pub get
           flutter build apk --release \
             --build-name="${{ steps.versao.outputs.name }}" \
-            --build-number="${{ github.run_number }}" \
+            --build-number="${{ steps.versao.outputs.build }}" \
             --dart-define=RASTREIO_ENV="$AMBIENTE" \
             --dart-define=RASTREIO_BASE_URL_DEV="$BASE_URL_DEV" \
             --dart-define=RASTREIO_HOST_HEADER_DEV="$HOST_HEADER_DEV" \
@@ -89,7 +93,11 @@ jobs:
             --dart-define=RASTREIO_BASE_URL_PROD="$BASE_URL_PROD" \
             --dart-define=RASTREIO_HOST_HEADER_PROD="$HOST_HEADER_PROD" \
             --dart-define=RASTREIO_API_KEY_PROD="$API_KEY_PROD"
-          mv build/app/outputs/flutter-apk/app-release.apk "${{ steps.versao.outputs.arquivo }}"
+          # Dois nomes para o mesmo APK: o versionado guarda o histórico, e o
+          # "latest" sustenta um link fixo para a página de download, servido
+          # pela rota /releases/latest/download/ do GitHub.
+          cp build/app/outputs/flutter-apk/app-release.apk "${{ steps.versao.outputs.arquivo }}"
+          cp build/app/outputs/flutter-apk/app-release.apk rota-rios-latest.apk
 
       - name: Publicar Release
         uses: softprops/action-gh-release@v2
@@ -98,7 +106,12 @@ jobs:
           name: ROTA RIOS ${{ steps.versao.outputs.name }} (${{ env.AMBIENTE }})
           body: |
             Ambiente: **${{ env.AMBIENTE }}**
-            Build: ${{ github.run_number }}
+            Build: ${{ steps.versao.outputs.build }}
             Commit: ${{ github.sha }}
-          files: ${{ steps.versao.outputs.arquivo }}
+
+            Link fixo para download (sempre a versão mais recente):
+            https://github.com/${{ github.repository }}/releases/latest/download/rota-rios-latest.apk
+          files: |
+            ${{ steps.versao.outputs.arquivo }}
+            rota-rios-latest.apk
           fail_on_unmatched_files: true
