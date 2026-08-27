@@ -49,3 +49,12 @@ app.*.map.json
 # Flutter gen-l10n outputs
 lib/l10n/app_localizations.dart
 lib/l10n/app_localizations_*.dart
+
+# Configuracao local da API (chaves de integracao)
+.env
+
+# Saida de build do Gradle (o /build/ acima cobre apenas a raiz)
+android/build/
+
+# Relatorios de bug gerados pelo emulador
+bugreport-*.zip

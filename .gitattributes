@@ -1,0 +1,20 @@
+# O repositório guarda LF, independente do sistema de quem edita.
+#
+# Sem isto, o core.autocrlf=true padrão do Git no Windows reescreve os arquivos
+# com CRLF ao gravá-los, e o diff passa a marcar arquivos inteiros como
+# alterados — o que polui a revisão e gera conflito artificial ao puxar do
+# upstream.
+* text=auto eol=lf
+
+# Binários não podem sofrer conversão de fim de linha.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.apk binary
+*.aab binary
+*.zip binary
+*.jks binary
+*.keystore binary
+*.ttf binary
+*.otf binary
