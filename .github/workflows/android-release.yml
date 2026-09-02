@@ -1,6 +1,7 @@
 name: Android Release
 
-# Toda atualização na main gera um APK assinado e publica uma Release.
+# Push na main gera um APK de produção assinado e publica a Release, cujo
+# asset de nome fixo sustenta o link da página de download.
 #
 # Nada de configuração vive no repositório: URLs vêm de Variables e chaves de
 # Secrets. O .env local serve apenas para builds na máquina do desenvolvedor.
@@ -15,8 +16,8 @@ on:
       ambiente:
         description: Ambiente que o APK vai usar
         type: choice
-        options: [developer, producao]
-        default: developer
+        options: [producao, developer]
+        default: producao
 
 jobs:
   build:
@@ -25,8 +26,7 @@ jobs:
       contents: write
 
     env:
-      # push na main sempre usa developer; a escolha só existe no disparo manual
-      AMBIENTE: ${{ inputs.ambiente || 'developer' }}
+      AMBIENTE: ${{ inputs.ambiente || 'producao' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -60,9 +60,8 @@ jobs:
           EOF
 
       # O versionCode precisa crescer a cada release, senão o Android recusa a
-      # atualização. run_number é monotônico, então serve como build number.
-      # O deslocamento evita colidir com os versionCode dos APKs gerados
-      # manualmente antes do CI existir, que chegaram a 2.
+      # atualização. run_number é monotônico; o deslocamento de 10 evita bater
+      # nos APKs gerados à mão antes do CI existir.
       - name: Resolver versão
         id: versao
         run: |
@@ -93,9 +92,10 @@ jobs:
             --dart-define=RASTREIO_BASE_URL_PROD="$BASE_URL_PROD" \
             --dart-define=RASTREIO_HOST_HEADER_PROD="$HOST_HEADER_PROD" \
             --dart-define=RASTREIO_API_KEY_PROD="$API_KEY_PROD"
+
           # Dois nomes para o mesmo APK: o versionado guarda o histórico, e o
-          # "latest" sustenta um link fixo para a página de download, servido
-          # pela rota /releases/latest/download/ do GitHub.
+          # "latest" sustenta o link fixo, servido pela rota
+          # /releases/latest/download/ do GitHub.
           cp build/app/outputs/flutter-apk/app-release.apk "${{ steps.versao.outputs.arquivo }}"
           cp build/app/outputs/flutter-apk/app-release.apk rota-rios-latest.apk
 
@@ -109,7 +109,7 @@ jobs:
             Build: ${{ steps.versao.outputs.build }}
             Commit: ${{ github.sha }}
 
-            Link fixo para download (sempre a versão mais recente):
+            Link fixo de download (sempre a versão mais recente):
             https://github.com/${{ github.repository }}/releases/latest/download/rota-rios-latest.apk
           files: |
             ${{ steps.versao.outputs.arquivo }}
