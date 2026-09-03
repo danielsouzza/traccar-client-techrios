@@ -60,5 +60,6 @@
   "trackingInactiveLabel": "Tracking off",
   "emailHint": "your.email@company.com",
   "trackingStartHint": "Tap to start tracking",
-  "trackingStartFailed": "Could not start tracking. Check the location permission."
+  "trackingStartFailed": "Could not start tracking. Check the location permission.",
+  "unexpectedError": "Unexpected error signing in. Please try again."
 }

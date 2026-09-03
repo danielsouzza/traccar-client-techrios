@@ -60,5 +60,6 @@
   "trackingInactiveLabel": "Rastreamento desativado",
   "emailHint": "seu.email@empresa.com",
   "trackingStartHint": "Toque para iniciar o rastreamento",
-  "trackingStartFailed": "Não foi possível iniciar o rastreamento. Verifique a permissão de localização."
+  "trackingStartFailed": "Não foi possível iniciar o rastreamento. Verifique a permissão de localização.",
+  "unexpectedError": "Erro inesperado ao entrar. Tente novamente."
 }

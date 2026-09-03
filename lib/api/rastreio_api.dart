@@ -53,6 +53,13 @@ class RastreioApi {
     return params.isEmpty ? uri : uri.replace(queryParameters: params);
   }
 
+  /// Converte o `data` do envelope, culpando a resposta em vez de estourar um
+  /// TypeError — que, em release, sumiria no handler global sem nada na tela.
+  static Map<String, dynamic> _asMap(dynamic data, String rota) {
+    if (data is Map<String, dynamic>) return data;
+    throw ApiException(0, 'Resposta inesperada do servidor em $rota.');
+  }
+
   static String _fallbackMessage(int status) {
     return switch (status) {
       401 => 'Sessão expirada. Entre novamente.',
@@ -129,10 +136,10 @@ class RastreioApi {
   }
 
   static Future<LoginResult> login(String email, String password) async {
-    final data = await _send('POST', '/login', body: {
+    final data = _asMap(await _send('POST', '/login', body: {
       'email': email,
       'password': password,
-    }) as Map<String, dynamic>;
+    }), '/login');
     final token = data['token']?.toString();
     if (token == null || token.isEmpty) {
       throw ApiException(0, 'O servidor não devolveu um token de acesso.');
@@ -141,7 +148,7 @@ class RastreioApi {
   }
 
   static Future<Perfil> perfil(String token) async {
-    final data = await _send('GET', '/perfil', token: token) as Map<String, dynamic>;
+    final data = _asMap(await _send('GET', '/perfil', token: token), '/perfil');
     return Perfil.fromJson(data);
   }
 
@@ -160,8 +167,8 @@ class RastreioApi {
       'busca': (busca != null && busca.isNotEmpty) ? busca : null,
       'page': page,
       'per_page': perPage,
-    }) as Map<String, dynamic>;
-    return Paginated.fromJson(data, Empresa.fromJson);
+    });
+    return Paginated.fromJson(_asMap(data, '/empresas'), Empresa.fromJson);
   }
 
   /// [empresaId] só tem efeito para Master; Empresa já vem filtrado pelo grupo.
@@ -175,7 +182,7 @@ class RastreioApi {
       'empresa_id': empresaId,
       'page': page,
       'per_page': perPage,
-    }) as Map<String, dynamic>;
-    return Paginated.fromJson(data, Embarcacao.fromJson);
+    });
+    return Paginated.fromJson(_asMap(data, '/embarcacoes'), Embarcacao.fromJson);
   }
 }

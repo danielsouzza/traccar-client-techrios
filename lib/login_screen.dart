@@ -1,3 +1,6 @@
+import 'dart:developer' as developer;
+
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 
 import 'api/api_config.dart';
@@ -45,6 +48,14 @@ class _LoginScreenState extends State<LoginScreen> {
       // O gate de autenticação troca a tela sozinho.
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
+    } catch (error, stack) {
+      // Sem este catch, qualquer falha que não seja ApiException — formato de
+      // resposta inesperado, armazenamento seguro indisponível — subia para o
+      // handler global, ia para o Crashlytics e a tela não mostrava nada: o
+      // usuário tocava em Entrar e parecia que o botão não funcionava.
+      developer.log('Login falhou', error: error, stackTrace: stack);
+      FirebaseCrashlytics.instance.recordError(error, stack);
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.unexpectedError);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
