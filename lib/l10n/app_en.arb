@@ -61,5 +61,6 @@
   "emailHint": "your.email@company.com",
   "trackingStartHint": "Tap to start tracking",
   "trackingStartFailed": "Could not start tracking. Check the location permission.",
-  "unexpectedError": "Unexpected error signing in. Please try again."
+  "unexpectedError": "Unexpected error signing in. Please try again.",
+  "fillCredentialsMessage": "Enter your e-mail and password."
 }

@@ -36,7 +36,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) return;
+    // Antes este caminho apenas retornava: o toque não produzia mensagem,
+    // spinner nem requisição, e o botão parecia não funcionar.
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = AppLocalizations.of(context)!.fillCredentialsMessage);
+      return;
+    }
 
     setState(() {
       _loading = true;
