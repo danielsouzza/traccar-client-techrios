@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 
-import 'package:ota_update/ota_update.dart';
-
 import 'app_info.dart';
 
 /// Versão publicada, lida do manifesto que acompanha a release.
@@ -20,12 +18,14 @@ class VersaoDisponivel {
   final String url;
 }
 
-/// Atualização do app fora da loja.
+/// Descobre se há uma versão mais nova publicada fora da loja.
 ///
-/// Lê um `latest.json` publicado junto do APK e, havendo versão mais nova,
-/// baixa e entrega ao instalador do Android. Como o APK é assinado com a mesma
-/// chave, ele substitui o instalado sem desinstalar, preservando sessão e
-/// embarcação selecionada.
+/// Só compara: quem baixa e instala é o próprio Android, quando o app abre a
+/// URL do APK no navegador. Baixar de dentro do app, via ota_update, derrubava
+/// o processo no meio do download e nunca chegava a instalar.
+///
+/// Como o APK é assinado com a mesma chave, ele substitui o instalado sem
+/// desinstalar, preservando sessão e embarcação selecionada.
 class UpdateService {
   UpdateService._();
 
@@ -71,13 +71,5 @@ class UpdateService {
     } finally {
       client.close();
     }
-  }
-
-  /// Baixa e dispara a instalação, emitindo o progresso.
-  static Stream<OtaEvent> baixarEInstalar(VersaoDisponivel versao) {
-    return OtaUpdate().execute(
-      versao.url,
-      destinationFilename: 'rota-rios-${versao.versionCode}.apk',
-    );
   }
 }

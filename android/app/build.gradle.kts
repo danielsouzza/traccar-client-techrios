@@ -24,9 +24,6 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        // Exigido pelo ota_update, que usa APIs de java.time/java.nio abaixo do
-        // nível de API mínimo do projeto.
-        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -67,10 +64,6 @@ android {
     lint {
         disable.add("NullSafeMutableLiveData")
     }
-}
-
-dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {
