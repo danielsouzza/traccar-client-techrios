@@ -60,7 +60,13 @@ class _LoginScreenState extends State<LoginScreen> {
       // usuário tocava em Entrar e parecia que o botão não funcionava.
       developer.log('Login falhou', error: error, stackTrace: stack);
       FirebaseCrashlytics.instance.recordError(error, stack);
-      if (mounted) setState(() => _error = AppLocalizations.of(context)!.unexpectedError);
+      // O tipo da exceção acompanha a mensagem: sem ele, o relato de suporte
+      // vira "deu erro inesperado" e não distingue falha de armazenamento
+      // seguro de erro de formato ou de plataforma.
+      if (mounted) {
+        setState(() => _error =
+            '${AppLocalizations.of(context)!.unexpectedError} (${error.runtimeType})');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
