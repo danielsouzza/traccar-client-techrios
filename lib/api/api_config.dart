@@ -18,19 +18,39 @@ enum ApiEnvironment { homologacao, developer, producao }
 class ApiEnvironmentConfig {
   const ApiEnvironmentConfig({
     required this.label,
-    required this.baseUrl,
-    required this.apiKey,
-    this.hostHeader = '',
-  });
+    required String baseUrl,
+    required String apiKey,
+    String hostHeader = '',
+  })  : _baseUrl = baseUrl,
+        _apiKey = apiKey,
+        _hostHeader = hostHeader;
 
   final String label;
-  final String baseUrl;
-  final String apiKey;
+  final String _baseUrl;
+  final String _apiKey;
+  final String _hostHeader;
+
+  /// Valores vindos de Variables e Secrets chegam como o autor digitou: com
+  /// espaço sobrando ou aspas coladas ao redor. Uma URL entre aspas derruba o
+  /// Uri.parse com FormatException antes de qualquer requisição sair — falha
+  /// difícil de rastrear, porque o app parece simplesmente não reagir.
+  static String _limpar(String valor) {
+    var limpo = valor.trim();
+    final aspas = (limpo.startsWith('"') && limpo.endsWith('"')) ||
+        (limpo.startsWith("'") && limpo.endsWith("'"));
+    if (limpo.length >= 2 && aspas) {
+      limpo = limpo.substring(1, limpo.length - 1).trim();
+    }
+    return limpo;
+  }
+
+  String get baseUrl => _limpar(_baseUrl);
+  String get apiKey => _limpar(_apiKey);
 
   /// Host enviado no header quando difere do host da conexão. Usado ao apontar
   /// para a máquina local: o emulador chega nela por 10.0.2.2, mas o Traefik
   /// roteia pelo Host.
-  final String hostHeader;
+  String get hostHeader => _limpar(_hostHeader);
 
   bool get isConfigured => apiKey.isNotEmpty && apiKey != ApiConfig.unsetApiKey;
 }

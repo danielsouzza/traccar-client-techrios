@@ -130,6 +130,10 @@ class RastreioApi {
       throw ApiException(0, 'Sem conexão com o servidor.');
     } on HandshakeException {
       throw ApiException(0, 'Falha na conexão segura com o servidor.');
+    } on FormatException catch (error) {
+      // Tipicamente URL malformada vinda da configuração de build.
+      _log('$method $path -> configuração inválida: ${error.message}');
+      throw ApiException(0, 'Endereço do servidor inválido nesta versão do app.');
     } finally {
       client.close();
     }
