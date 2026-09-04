@@ -99,6 +99,17 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk "${{ steps.versao.outputs.arquivo }}"
           cp build/app/outputs/flutter-apk/app-release.apk rota-rios-latest.apk
 
+          # Manifesto que o app consulta para saber se há versão nova. Fica no
+          # mesmo endereço fixo do APK, então a checagem não passa pela API do
+          # GitHub e escapa do limite de 60 requisições por hora por IP.
+          cat > latest.json <<JSON
+          {
+            "versionCode": ${{ steps.versao.outputs.build }},
+            "versionName": "${{ steps.versao.outputs.name }}",
+            "url": "https://github.com/${{ github.repository }}/releases/latest/download/rota-rios-latest.apk"
+          }
+          JSON
+
       - name: Publicar Release
         uses: softprops/action-gh-release@v2
         with:
@@ -114,4 +125,5 @@ jobs:
           files: |
             ${{ steps.versao.outputs.arquivo }}
             rota-rios-latest.apk
+            latest.json
           fail_on_unmatched_files: true

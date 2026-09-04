@@ -28,6 +28,7 @@ dependencies:
   share_plus: ^13.3.0
   managed_configurations: ^1.2.0
   package_info_plus: ^10.2.1
+  ota_update: ^7.1.0
 
 dev_dependencies:
   flutter_test:

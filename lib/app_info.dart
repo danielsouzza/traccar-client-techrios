@@ -12,10 +12,15 @@ class AppInfo {
 
   static String version = '';
 
+  /// versionCode do Android. É por ele que a atualização compara versões: o
+  /// nome pode repetir entre builds, o número sempre cresce.
+  static String buildNumber = '';
+
   static Future<void> init() async {
     try {
       final info = await PackageInfo.fromPlatform();
       version = info.version;
+      buildNumber = info.buildNumber;
     } catch (error) {
       developer.log('Failed to read package info', error: error);
     }
