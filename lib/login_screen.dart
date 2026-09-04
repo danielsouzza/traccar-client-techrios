@@ -290,7 +290,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            'v${AppInfo.version}',
+            // O ambiente ao lado da versão evita a dúvida de qual build está
+            // instalado — em suporte, "não funciona" costuma ser o APK errado.
+            'v${AppInfo.version} · ${ApiConfig.env.label}',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: palette.muted),
           ),
