@@ -22,6 +22,8 @@ import 'main_screen.dart';
 import 'managed_config_service.dart';
 import 'preferences.dart';
 import 'theme.dart';
+import 'update_dialog.dart';
+import 'update_service.dart';
 
 final messengerKey = GlobalKey<ScaffoldMessengerState>();
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -66,6 +68,9 @@ class _MainAppState extends State<MainApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _initLinks();
+      // No nível do app, e não da tela principal: uma versão que quebre o
+      // login deixaria o usuário preso, sem meio de se atualizar.
+      await _verificarAtualizacao();
       await rateMyApp.init();
       final dialogContext = navigatorKey.currentContext;
       if (dialogContext != null && dialogContext.mounted && rateMyApp.shouldOpenDialog) {
@@ -76,6 +81,15 @@ class _MainAppState extends State<MainApp> {
 
   Future<void> _initLinks() async {
     AppLinks().uriLinkStream.listen(_handleUri);
+  }
+
+  /// Silenciosa por natureza: sem versão nova, ou sem rede, nada aparece.
+  Future<void> _verificarAtualizacao() async {
+    final versao = await UpdateService.verificar();
+    if (versao == null) return;
+    final context = navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    await UpdateDialog.mostrar(context, versao);
   }
 
   Future<void> _handleUri(Uri uri) async {

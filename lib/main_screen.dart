@@ -12,8 +12,6 @@ import 'l10n/app_localizations.dart';
 import 'selection_flow.dart';
 import 'session_service.dart';
 import 'settings_screen.dart';
-import 'update_dialog.dart';
-import 'update_service.dart';
 import 'theme.dart';
 
 class MainScreen extends StatefulWidget {
@@ -31,12 +29,9 @@ class MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _refreshState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       // Sem embarcação não há o que rastrear, então a lista abre já no login.
-      if (!SessionService.hasEmbarcacao) {
-        await _openSelection(showBackButton: false);
-      }
-      await _verificarAtualizacao();
+      if (!SessionService.hasEmbarcacao) _openSelection(showBackButton: false);
     });
   }
 
@@ -66,13 +61,6 @@ class MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _openSelection({bool showBackButton = true}) async {
     final changed = await SelectionFlow.start(context, showBackButton: showBackButton);
     if (changed && mounted) setState(() {});
-  }
-
-  /// Silenciosa por natureza: sem versão nova, ou sem rede, nada aparece.
-  Future<void> _verificarAtualizacao() async {
-    final versao = await UpdateService.verificar();
-    if (versao == null || !mounted) return;
-    await UpdateDialog.mostrar(context, versao);
   }
 
   Future<void> _signOut() async {
