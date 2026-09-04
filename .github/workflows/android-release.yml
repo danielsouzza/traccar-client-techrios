@@ -82,7 +82,10 @@ jobs:
           API_KEY_PROD: ${{ secrets.RASTREIO_API_KEY_PROD }}
         run: |
           flutter pub get
+          # Só ARM: os aparelhos em campo não são x86, e cortar essa ABI
+          # encolhe o APK que o pessoal baixa pelo celular.
           flutter build apk --release \
+            --target-platform android-arm,android-arm64 \
             --build-name="${{ steps.versao.outputs.name }}" \
             --build-number="${{ steps.versao.outputs.build }}" \
             --dart-define=RASTREIO_ENV="$AMBIENTE" \
