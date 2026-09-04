@@ -223,13 +223,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildForm(AppLocalizations localizations, bool configured, bool enabled) {
     final palette = context.palette;
+    // Sem reservar a área do sistema, o cartão chega até a borda inferior e o
+    // botão fica sob a barra de navegação por gestos, que intercepta o toque
+    // antes de ele chegar ao app: o usuário toca e nada acontece.
+    final insetInferior = MediaQuery.viewPaddingOf(context).bottom;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
+      padding: EdgeInsets.fromLTRB(28, 32, 28, 24 + insetInferior),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
