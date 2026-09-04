@@ -185,6 +185,10 @@ class _LoginScreenState extends State<LoginScreen> {
           enabled: enabled,
           obscureText: obscure,
           autocorrect: false,
+          // Limpa o erro ao editar: sem isto a mensagem de um toque anterior
+          // permanece na tela enquanto o usuário digita, e passa a contradizer
+          // o que ele está vendo nos campos.
+          onChanged: _error == null ? null : (_) => setState(() => _error = null),
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
